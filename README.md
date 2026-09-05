@@ -19,13 +19,12 @@ consumer copies, and how a release of this repository reaches it.
 ```yaml
 jobs:
   panel:
-    uses: PineappleEmperor/ha-panel-ci/.github/workflows/panel-bundle.yml@0000000000000000000000000000000000000000 # v1.0.0
+    uses: PineappleEmperor/ha-panel-ci/.github/workflows/panel-bundle.yml@e25057c83ff60ec60db161827974cb95bf41cc63 # v1.0.0rc1
 ```
 
-What the all-zeros SHA is, and what replaces it, is under The pointers in
+What the pin is, and how Dependabot moves it, is The pointers and the version model in
 [PineappleEmperor/ha-integration-ci](https://github.com/PineappleEmperor/ha-integration-ci)'s
-README; how Dependabot moves it afterwards is that README's version model, which this
-repository follows exactly.
+README, which this repository follows exactly.
 
 The resulting check is named `panel / Panel type-check and tests` — GitHub's naming rule
 for a job that calls a reusable workflow is in

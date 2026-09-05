@@ -1,5 +1,4 @@
 # Copy to .github/workflows/panel-bundle.yml in the consuming repository.
-# The all-zeros SHA is a placeholder: README.md, "The pointers".
 name: Panel Bundle
 
 on:
@@ -20,4 +19,4 @@ permissions:
 
 jobs:
   panel:
-    uses: PineappleEmperor/ha-panel-ci/.github/workflows/panel-bundle.yml@0000000000000000000000000000000000000000 # v1.0.0
+    uses: PineappleEmperor/ha-panel-ci/.github/workflows/panel-bundle.yml@e25057c83ff60ec60db161827974cb95bf41cc63 # v1.0.0rc1
