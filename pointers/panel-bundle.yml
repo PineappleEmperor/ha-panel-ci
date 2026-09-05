@@ -1,0 +1,23 @@
+# Copy to .github/workflows/panel-bundle.yml in the consuming repository.
+# The all-zeros SHA is a placeholder: README.md, "The pointers".
+name: Panel Bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'custom_components/*/panel/**'
+      - '.github/workflows/panel-bundle.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'custom_components/*/panel/**'
+      - '.github/workflows/panel-bundle.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  panel:
+    uses: PineappleEmperor/ha-panel-ci/.github/workflows/panel-bundle.yml@0000000000000000000000000000000000000000 # v1.0.0

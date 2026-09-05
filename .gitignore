@@ -1,0 +1,5 @@
+node_modules/
+dist/
+
+# Repo-local scratch: clones, fixtures and throwaway copies
+.tmp/
