@@ -2,40 +2,66 @@
 
 The single home of the panel-bundle workflow for Home Assistant custom integrations that
 serve a custom panel (a Lit/TypeScript web component bundled with esbuild and committed
-under `custom_components/<domain>/panel/`). The sections below say what is here, what a
-consumer copies, and how a release of this repository reaches it.
+under `custom_components/<domain>/panel/`). The sections below say what is here, how a
+consumer calls it, and how a release of this repository reaches it.
 
 ## What is here
 
 | Path | What it is |
 |---|---|
-| `.github/workflows/panel-bundle.yml` | The workflow body. `on: workflow_call` only, no inputs, no secrets. Type-checks, unit-tests and builds the panel to prove it still compiles (the build artefact is discarded); every step after checkout is guarded, for the reason under The pointers. The panel's TypeScript is reachable from nothing else in the stack — `tsc --noEmit` catches what the Python suite cannot see. What ships is decided by `release.yml` in `PineappleEmperor/ha-integration-ci`. |
-| `pointers/panel-bundle.yml` | The file a consumer copies to `.github/workflows/panel-bundle.yml`. Carries the triggers and `permissions: contents: read`, and calls the body above. |
+| `.github/workflows/panel-bundle.yml` | The workflow body. `on: workflow_call` only, no inputs, no secrets. Type-checks, unit-tests and builds the panel to prove it still compiles (the build artefact is discarded); every step after checkout is guarded, for the reason under Calling the workflow. The panel's TypeScript is reachable from nothing else in the stack — `tsc --noEmit` catches what the Python suite cannot see. What ships is decided by `release.yml` in `PineappleEmperor/ha-integration-ci`. |
 | `frontend/package.json`, `frontend/tsconfig.json` | The templates a consumer copies into its own `frontend/`. |
 | `.github/dependabot.yml` | Moves the action pins inside the body and the version ranges in the frontend templates; without this bump the templates, copied once, would rot in place while a consumer's own Dependabot moves ahead of them. |
 
-## The pointers
+## Calling the workflow
+
+A consumer carries this caller workflow as its `.github/workflows/panel-bundle.yml`:
 
 ```yaml
+# .github/workflows/panel-bundle.yml
+name: Panel Bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'custom_components/*/panel/**'
+      - '.github/workflows/panel-bundle.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'custom_components/*/panel/**'
+      - '.github/workflows/panel-bundle.yml'
+
+permissions:
+  contents: read
+
 jobs:
   panel:
-    uses: PineappleEmperor/ha-panel-ci/.github/workflows/panel-bundle.yml@e25057c83ff60ec60db161827974cb95bf41cc63 # v1.0.0rc1
+    uses: PineappleEmperor/ha-panel-ci/.github/workflows/panel-bundle.yml@{{sha}} # {{tag}}
 ```
 
-What the pin is, and how Dependabot moves it, is The pointers and the version model in
+`{{tag}}` and `{{sha}}` resolve as release-flow's README says under Calling the
+workflows, against this repository:
+
+```
+TAG=$(gh api repos/PineappleEmperor/ha-panel-ci/releases/latest --jq .tag_name)
+SHA=$(gh api "repos/PineappleEmperor/ha-panel-ci/commits/$TAG" --jq .sha)
+```
+
+How Dependabot moves the pin afterwards is the version model in
 [PineappleEmperor/ha-integration-ci](https://github.com/PineappleEmperor/ha-integration-ci)'s
 README, which this repository follows exactly.
 
 The resulting check is named `panel / Panel type-check and tests` — GitHub's naming rule
-for a job that calls a reusable workflow is in
-[PineappleEmperor/ha-integration-ci](https://github.com/PineappleEmperor/ha-integration-ci)'s
-README. **It must never be a required status check.** The pointer is
-path-filtered to `frontend/**`, `custom_components/*/panel/**` and itself, so it does not
-report at all on a Python-only PR, and a required context that never reports leaves that
-PR unmergeable forever. Leave it advisory.
+for a job that calls a reusable workflow is in that README too. **It must never be a
+required status check.** The caller is path-filtered as above, so it does not report at
+all on a Python-only PR, and a required context that never reports leaves that PR
+unmergeable forever. Leave it advisory.
 
-The path filter names the pointer file itself, so the first run a repo ever sees is the
-one that lands the pointer. That is why the body guards every step on the panel's
+The path filter names the caller file itself, so the first run a repo ever sees is the
+one that lands the caller. That is why the body guards every step on the panel's
 manifest rather than assuming one exists — the first such run once died at
 `setup-node`'s cache step, on a lock file that did not exist yet. Each step below is
 gated individually because a job-level `if` cannot see files, but a step-level one can.
@@ -72,9 +98,9 @@ proves a build the release never performs.
 
 ## Version model
 
-The version model is ha-integration-ci's, linked under The pointers.
+The version model is ha-integration-ci's, linked under Calling the workflow.
 
 ## This repo's own PR gate
 
-This repository's PR checks will be pointers at `PineappleEmperor/release-flow`, on the
-same terms and timing as "This repository's own PR gate" in ha-integration-ci's README.
+As "This repository's own PR gate" in ha-integration-ci's README: this repository is a
+consumer of release-flow like any other, with no CI of its own beyond that.
