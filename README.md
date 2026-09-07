@@ -42,6 +42,14 @@ jobs:
     uses: PineappleEmperor/ha-panel-ci/.github/workflows/panel-bundle.yml@{{sha}} # {{tag}}
 ```
 
+One optional input. A consumer that would rather a stale committed bundle turned the run
+red than left a warning adds it under the `uses:` line:
+
+```yaml
+    with:
+      fail-on-stale-bundle: true
+```
+
 `{{tag}}` and `{{sha}}` resolve as release-flow's README says under Calling the
 workflows, against this repository:
 
@@ -86,7 +94,9 @@ pattern rather than reporting none. It warns when no test file exists, because t
 panel's presentation logic is then unproven, and it warns when the committed bundle is
 stale against a fresh build, because leaving that silent until release meant finding out
 too late. Neither warning blocks a merge: gating on the bundle's freshness once blocked
-merges over a build artefact.
+merges over a build artefact. `fail-on-stale-bundle` turns the second one into a failure
+for a consumer that wants it — the job goes red, and since this check is never a required
+context the merge is still the author's call.
 
 ## The release zip must agree with the build step
 

@@ -1,7 +1,15 @@
 name: Panel Bundle
 # Documented in README.md.
 on:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      fail-on-stale-bundle:
+        description: >-
+          Fail the job when the committed panel bundle no longer matches a fresh build,
+          instead of warning. Off by default: gating on a build artefact once blocked
+          merges, and this check must never be a required context.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -53,9 +61,14 @@ jobs:
       - name: Say whether the committed bundle is stale
         if: hashFiles('frontend/package.json') != ''
         working-directory: .
+        env:
+          STRICT: ${{ inputs.fail-on-stale-bundle }}
         run: |
           if git diff --quiet -- 'custom_components/*/panel/*.js'; then
             echo "::notice::committed panel bundle matches a fresh build"
+          elif [ "$STRICT" = "true" ]; then
+            echo "::error::the committed panel bundle is stale — run 'npm run build' in frontend/ and commit the result"
+            exit 1
           else
             echo "::warning::the committed panel bundle is stale — run 'npm run build' in frontend/ and commit the result. This does not block the merge."
           fi
