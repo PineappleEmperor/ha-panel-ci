@@ -87,6 +87,13 @@ template is edited:
 The `scripts` in `package.json` (`check`, `test`, `build`) are the contract between the
 consumer, this workflow and the release zip.
 
+`esbuild` is pinned to the major that `vitest` itself depends on. When the two ranges
+disagree npm resolves two copies, and the nested one loses the `optional` flag on
+esbuild's platform packages — so `npm ci` on a Linux runner tries to install
+`@esbuild/aix-ppc64` and fails `EBADPLATFORM`. It fails only in CI, because the lock file
+that carries the fault is written by an install that succeeded locally. Keep the two in
+step when either moves.
+
 Vitest needs no config file; its default include pattern already picks up
 `frontend/test/*.test.ts`. The workflow looks for test files with `find`, not a glob,
 because bash `**` does not recurse without globstar and `ls` errors on a non-matching
