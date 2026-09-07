@@ -89,10 +89,27 @@ consumer, this workflow and the release zip.
 
 `esbuild` is pinned to the major that `vitest` itself depends on. When the two ranges
 disagree npm resolves two copies, and the nested one loses the `optional` flag on
-esbuild's platform packages — so `npm ci` on a Linux runner tries to install
-`@esbuild/aix-ppc64` and fails `EBADPLATFORM`. It fails only in CI, because the lock file
-that carries the fault is written by an install that succeeded locally. Keep the two in
-step when either moves.
+esbuild's platform packages, so an install of that lock file tries to fetch
+`@esbuild/aix-ppc64` and fails `EBADPLATFORM`. Keep the two in step when either moves.
+
+It hides from the obvious check. `npm install` writes the faulty lock file and succeeds;
+only `npm ci` reads it back and fails, which is why this reached a runner having passed
+three of the four commands locally.
+
+## Proving a panel locally
+
+Run what the workflow runs, from a clean tree, in this order — the install is the step
+that catches a lock file no one can see is wrong:
+
+```
+rm -rf node_modules && npm ci
+npm run check
+npm test
+npm run build
+```
+
+Then check `git status`: a `build` that changes the committed bundle means the bundle in
+the last commit was stale.
 
 Vitest needs no config file; its default include pattern already picks up
 `frontend/test/*.test.ts`. The workflow looks for test files with `find`, not a glob,
