@@ -52,8 +52,8 @@ SHA=$(gh api "repos/PineappleEmperor/ha-panel-ci/commits/$TAG" --jq .sha)
 
 One optional input, `fail-on-stale-bundle`. The workflow warns when the committed bundle
 no longer matches a fresh build; a consumer that would rather that turned the run red
-adds this under the `uses:` line. The job then fails, and since this check is never a
-required context the merge is still the author's call.
+adds this under the `uses:` line. The job then fails instead of warning; it stays
+advisory for the reason two paragraphs down.
 
 ```yaml
     with:
@@ -89,13 +89,14 @@ template is edited:
 The `scripts` in `package.json` (`check`, `test`, `build`) are the contract between the
 consumer, this workflow and the release zip.
 
-`esbuild` is pinned to a range that `vite`, which `vitest` pulls in, accepts. Nothing
-declares esbuild as a direct dependency: `vite` declares it as a *peer* over a range
-spanning two majors, so nothing forces a single copy. When the pinned range and that peer
-range disagree npm resolves two copies, and the nested one loses the `optional` flag on
-esbuild's platform packages, so installing that lock file tries to fetch
-`@esbuild/aix-ppc64` and fails `EBADPLATFORM`. The constraint that moves is vite's peer
-range, which changes on its own schedule — check it there, not against vitest's version.
+`esbuild` is a direct `devDependency` here, pinned to a range that `vite` — which
+`vitest` pulls in — also accepts. `vite` declares esbuild only as a *peer*, over a range
+spanning two majors, so this pin is the one thing choosing a version and nothing forces a
+single copy. When the two disagree npm resolves two copies, and the nested one loses the
+`optional` flag on esbuild's platform packages, so installing that lock file tries to
+fetch `@esbuild/aix-ppc64` and fails `EBADPLATFORM`. The constraint that moves is vite's
+peer range, which changes on its own schedule — check it there, not against vitest's
+version.
 
 It hides from the obvious check, because `npm ci` is the only command that reads the lock
 file back. On npm 11 an `npm install` writes the faulty file and exits 0; on the npm that
