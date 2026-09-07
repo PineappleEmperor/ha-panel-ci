@@ -6,8 +6,7 @@ on:
       fail-on-stale-bundle:
         description: >-
           Fail the job when the committed panel bundle no longer matches a fresh build,
-          instead of warning. Off by default: gating on a build artefact once blocked
-          merges, and this check must never be a required context.
+          instead of warning. Off by default; README.md says why.
         type: boolean
         default: false
 
