@@ -9,7 +9,7 @@ consumer calls it, and how a release of this repository reaches it.
 
 | Path | What it is |
 |---|---|
-| `.github/workflows/panel-bundle.yml` | The workflow body. `on: workflow_call` only, no inputs, no secrets. Type-checks, unit-tests and builds the panel to prove it still compiles (the build artefact is discarded); every step after checkout is guarded, for the reason under Calling the workflow. The panel's TypeScript is reachable from nothing else in the stack — `tsc --noEmit` catches what the Python suite cannot see. What ships is decided by `release.yml` in `PineappleEmperor/ha-integration-ci`. |
+| `.github/workflows/panel-bundle.yml` | The workflow body. `on: workflow_call`, one optional input, no secrets. Type-checks, unit-tests and builds the panel to prove it still compiles (the build artefact is discarded); every step after checkout is guarded, for the reason under Calling the workflow. The panel's TypeScript is reachable from nothing else in the stack — `tsc --noEmit` catches what the Python suite cannot see. What ships is decided by `release.yml` in `PineappleEmperor/ha-integration-ci`. |
 | `frontend/package.json`, `frontend/tsconfig.json` | The templates a consumer copies into its own `frontend/`. |
 | `.github/dependabot.yml` | Moves the action pins inside the body and the version ranges in the frontend templates; without this bump the templates, copied once, would rot in place while a consumer's own Dependabot moves ahead of them. |
 
@@ -50,6 +50,16 @@ TAG=$(gh api repos/PineappleEmperor/ha-panel-ci/releases/latest --jq .tag_name)
 SHA=$(gh api "repos/PineappleEmperor/ha-panel-ci/commits/$TAG" --jq .sha)
 ```
 
+One optional input, `fail-on-stale-bundle`. The workflow warns when the committed bundle
+no longer matches a fresh build; a consumer that would rather that turned the run red
+adds this under the `uses:` line. The job then fails instead of warning; it stays
+advisory for the reason two paragraphs down.
+
+```yaml
+    with:
+      fail-on-stale-bundle: true
+```
+
 How Dependabot moves the pin afterwards is the version model in
 [PineappleEmperor/ha-integration-ci](https://github.com/PineappleEmperor/ha-integration-ci)'s
 README, which this repository follows exactly.
@@ -79,6 +89,20 @@ template is edited:
 The `scripts` in `package.json` (`check`, `test`, `build`) are the contract between the
 consumer, this workflow and the release zip.
 
+`esbuild` is a direct `devDependency` here, pinned to a range that `vite` — which
+`vitest` pulls in — also accepts. `vite` declares esbuild only as a *peer*, over a range
+spanning two majors, so this pin is the one thing choosing a version and nothing forces a
+single copy. When the two disagree npm resolves two copies, and the nested one loses the
+`optional` flag on esbuild's platform packages, so installing that lock file tries to
+fetch `@esbuild/aix-ppc64` and fails `EBADPLATFORM`. The constraint that moves is vite's
+peer range, which changes on its own schedule — check it there, not against vitest's
+version.
+
+It hides from the obvious check, because `npm ci` is the only command that reads the lock
+file back. On npm 11 an `npm install` writes the faulty file and exits 0; on the npm that
+ships with the node this workflow pins it exits 1 inside vite's own resolution instead.
+Either way, running anything but `npm ci` proves nothing about the lock file.
+
 Vitest needs no config file; its default include pattern already picks up
 `frontend/test/*.test.ts`. The workflow looks for test files with `find`, not a glob,
 because bash `**` does not recurse without globstar and `ls` errors on a non-matching
@@ -86,7 +110,25 @@ pattern rather than reporting none. It warns when no test file exists, because t
 panel's presentation logic is then unproven, and it warns when the committed bundle is
 stale against a fresh build, because leaving that silent until release meant finding out
 too late. Neither warning blocks a merge: gating on the bundle's freshness once blocked
-merges over a build artefact.
+merges over a build artefact; `fail-on-stale-bundle`, under Calling the workflow, is how
+a consumer opts out of the second one.
+
+## Proving a panel locally
+
+Run what the workflow runs, in `frontend/`, from a clean tree, in this order. `npm ci` is
+the step that catches a lock file nobody can see is wrong, so it is the one that cannot
+be substituted:
+
+```
+cd frontend
+rm -rf node_modules && npm ci
+npm run check
+npm test
+npm run build
+```
+
+Then check `git status`: a `build` that changes the committed bundle means the bundle in
+the last commit was stale.
 
 ## The release zip must agree with the build step
 
