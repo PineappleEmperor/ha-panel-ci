@@ -145,4 +145,5 @@ The version model is ha-integration-ci's, linked under Calling the workflow.
 ## This repo's own PR gate
 
 As "This repository's own PR gate" in ha-integration-ci's README: this repository is a
-consumer of release-flow like any other, with no CI of its own beyond that.
+consumer of release-flow like any other, with no CI of its own beyond that, and it
+carries the same `testbed-coverage.yml` caller that section describes.
