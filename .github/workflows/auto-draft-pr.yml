@@ -9,6 +9,6 @@ permissions:
 
 jobs:
   draft:
-    uses: PineappleEmperor/release-flow/.github/workflows/auto-draft-pr.yml@8b41d48fc9bd3e7aea1d2ffdde98ca6205fdd16a # v1.0.1
+    uses: PineappleEmperor/release-flow/.github/workflows/auto-draft-pr.yml@87305e56bf921fe8728a2b448b112b06da6cc082 # v1.1.1
     secrets:
       release-token: ${{ secrets.RELEASE_TOKEN }}
