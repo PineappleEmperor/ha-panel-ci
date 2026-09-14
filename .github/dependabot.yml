@@ -10,6 +10,8 @@ updates:
           - "*"
     commit-message:
       prefix: chore
+    cooldown:
+      exclude: ["PineappleEmperor/*"]
   - package-ecosystem: npm
     directory: /frontend
     schedule:
